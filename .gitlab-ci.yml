@@ -1,0 +1,14 @@
+stages:
+  - test
+
+
+####################
+# TEST STAGE
+####################
+
+test-job:
+  stage: test
+  image: python:3.12
+  script:
+    - pip install -r requirements.txt
+    - pytest
