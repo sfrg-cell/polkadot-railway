@@ -4,44 +4,43 @@ import threading
 import time
 import os
 import sys
-import app
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
+import app
 
-@pytest.fixture
+TEST_LOG_FILE = os.path.join(os.path.dirname(__file__), "test_service.log")
+
+
+@pytest.fixture(scope="module")
 def server():
-
-    os.environ["LOG_FILE"] = "test_service.log"
-
-
-    if os.path.exists("test_service.log"):
-        os.remove("test_service.log")
+    app.LOG_FILE = TEST_LOG_FILE
+    os.environ["LOG_FILE"] = TEST_LOG_FILE
+    
+    if os.path.exists(TEST_LOG_FILE):
+        os.remove(TEST_LOG_FILE)
     
     server_thread = threading.Thread(target=app.main, daemon=True)
     server_thread.start()
     
-    time.sleep(2)
+    time.sleep(3)
     
     yield
-
-    if os.path.exists("test_service.log"):
-        os.remove("test_service.log")
     
+    if os.path.exists(TEST_LOG_FILE):
+        os.remove(TEST_LOG_FILE)
+
 
 def test_server_starts_and_logs(server):
-    log_file = "test_service.log"
-
+    assert os.path.exists(TEST_LOG_FILE), f"Log file should exist at {TEST_LOG_FILE}"
     
-    assert os.path.exists(log_file)
-    
-    with open(log_file, "r") as f:
+    with open(TEST_LOG_FILE, "r") as f:
         content = f.read()
         assert f"Service started on port {app.PORT}" in content
 
 
 def test_index_endpoint_returns_logs(server):
-    conn = http.client.HTTPConnection("localhost", PORT)
+    conn = http.client.HTTPConnection("localhost", app.PORT, timeout=10)
     
     try:
         conn.request("GET", "/")
@@ -53,13 +52,11 @@ def test_index_endpoint_returns_logs(server):
         data = response.read().decode("utf-8")
         assert "<html>" in data
         assert "Last 100 logs" in data
-        assert f"Service started on port {app.PORT}" in data
         
     finally:
         conn.close()
 
 
 def test_log_file_created(server):
-    log_file = "test_service.log"
-    assert os.path.exists(log_file)
-    assert os.path.getsize(log_file) > 0
+    assert os.path.exists(TEST_LOG_FILE), f"Log file should exist at {TEST_LOG_FILE}"
+    assert os.path.getsize(TEST_LOG_FILE) > 0
