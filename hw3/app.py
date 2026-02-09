@@ -7,8 +7,7 @@ import os
 
 
 PORT = 5336
-LOG_FILE = "/home/anna/service.log"
-
+LOG_FILE = os.environ.get("LOG_FILE", "service.log")
 
 def log(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

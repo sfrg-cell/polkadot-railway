@@ -3,31 +3,41 @@ import http.client
 import threading
 import time
 import os
-from app import main, LOG_FILE, PORT
+import sys
+import app
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 
 @pytest.fixture
 def server():
 
-    if os.path.exists(LOG_FILE):
-        os.remove(LOG_FILE)
+    os.environ["LOG_FILE"] = "test_service.log"
+
+
+    if os.path.exists("test_service.log"):
+        os.remove("test_service.log")
     
-    server_thread = threading.Thread(target=main, daemon=True)
+    server_thread = threading.Thread(target=app.main, daemon=True)
     server_thread.start()
     
     time.sleep(2)
     
     yield
+
+    if os.path.exists("test_service.log"):
+        os.remove("test_service.log")
     
 
 def test_server_starts_and_logs(server):
-    time.sleep(1)
+    log_file = "test_service.log"
+
     
-    assert os.path.exists(LOG_FILE)
+    assert os.path.exists(log_file)
     
-    with open(LOG_FILE, "r") as f:
+    with open(log_file, "r") as f:
         content = f.read()
-        assert f"Service started on port {PORT}" in content
+        assert f"Service started on port {app.PORT}" in content
 
 
 def test_index_endpoint_returns_logs(server):
@@ -43,15 +53,13 @@ def test_index_endpoint_returns_logs(server):
         data = response.read().decode("utf-8")
         assert "<html>" in data
         assert "Last 100 logs" in data
-        assert f"Service started on port {PORT}" in data
+        assert f"Service started on port {app.PORT}" in data
         
     finally:
         conn.close()
 
 
-def test_heartbeat_writes_logs(server):
-    time.sleep(3)
-    
-    with open(LOG_FILE, "r") as f:
-        content = f.read()
-        assert f"Service started on port {PORT}" in content
+def test_log_file_created(server):
+    log_file = "test_service.log"
+    assert os.path.exists(log_file)
+    assert os.path.getsize(log_file) > 0

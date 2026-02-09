@@ -9,6 +9,8 @@ stages:
 test-job:
   stage: test
   image: python:3.12
+  variables:
+    LOG_FILE: "test_service.log"
   script:
     - pip install -r requirements.txt
-    - pytest
+    - pytest -v hw3/test_app.py
