@@ -37,7 +37,6 @@ deploy-job:
     - chmod 700 ~/.ssh
 
     - ls -l ~/.ssh
-    - ssh-keygen -lf ~/.ssh/id_ed25519
 
     - ssh-keyscan -p $SERVER_PORT $SERVER_IP >> ~/.ssh/known_hosts
 
