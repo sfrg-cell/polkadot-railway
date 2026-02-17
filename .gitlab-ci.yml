@@ -29,29 +29,21 @@ deploy-job:
     - apt update
     - apt install -y openssh-client rsync
     - mkdir -p ~/.ssh
-
     - cp "$SSH_KEY" ~/.ssh/id_ed25519
-    - sed -i 's/\r$//' ~/.ssh/id_ed25519
-    - echo "" >> ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
     - chmod 700 ~/.ssh
 
-    - ls -l ~/.ssh
-
-    - ssh-keyscan -p $SERVER_PORT $SERVER_IP >> ~/.ssh/known_hosts
-
   script:
-    - ssh -o IdentitiesOnly=yes -o HostKeyAlgorithms=ssh-ed25519,ssh-rsa -o PubkeyAcceptedAlgorithms=ssh-ed25519,ssh-rsa -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "echo SSH_OK"
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "echo SSH_OK"
 
-    - rsync -av -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p $SERVER_PORT" ./ $SERVER_USER@$SERVER_IP:~/app/
+    - rsync -av -e "ssh -i ~/.ssh/id_ed25519 -p $SERVER_PORT -o StrictHostKeyChecking=no" ./ $SERVER_USER@$SERVER_IP:~/app/
 
-    - ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
         pkill -f app.py || true &&
         cd ~/app &&
         pip3 install -r requirements.txt &&
         nohup python3 app.py > app.log 2>&1 &
       "
-
 
   only:
     - main
