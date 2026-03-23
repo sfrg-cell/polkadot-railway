@@ -3,7 +3,7 @@ import http.client
 import threading
 import time
 import os
-import app
+from hw6 import app
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
