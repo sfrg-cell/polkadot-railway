@@ -4,7 +4,7 @@ from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 import os
 from dotenv import load_dotenv
-from pathlib import Path
+from pathlib import Path 
 
 dotenv_path = Path('/home/anna/i_havryliuk/.env')
 load_dotenv(dotenv_path=dotenv_path)
