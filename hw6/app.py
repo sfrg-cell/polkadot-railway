@@ -1,18 +1,12 @@
 import http.server
-import datetime 
-import time
 import socketserver
-import threading
 import urllib.parse
-from influxdb_client import InfluxDBClient
 import os
-import threading
-from collector import fetch_and_store_dot_price
+from influxdb_client import InfluxDBClient
 from dotenv import load_dotenv
-from pathlib import Path
+from collector import fetch_and_store_dot_price
 
-dotenv_path = Path('/home/anna/i_havryliuk/.env')
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv()
 
 PORT = int(os.getenv("PORT", 5336))
 TOKEN = os.getenv("INFLUX_TOKEN")
@@ -45,72 +39,37 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
 
         elif parsed_path.path == "/calculate":
-
+            fetch_and_store_dot_price()
             hours_list = params.get("hours_ago")
-
-            if not hours_list:
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(b"Error: Please provide number of hours.")
-                return
-
-            hours = hours_list[0]
+            hours = hours_list[0] if hours_list else "1"
             start_time = f"-{hours}h"
 
-            flux_query = f'''
-            from(bucket: "{BUCKET}")
-                |> range(start: {start_time})
-                |> filter(fn: (r) => r._measurement == "crypto_price" and r.coin == "DOT")
-            '''
-
+            flux_query = f'from(bucket: "{BUCKET}") |> range(start: {start_time}) |> filter(fn: (r) => r._measurement == "crypto_price")'
+            
             try:
                 results = query_api.query(org=ORG, query=flux_query)
-                prices = []
-                for table in results:
-                    for record in table.records:
-                        prices.append(record.get_value())
+                prices = [record.get_value() for table in results for record in table.records]
+                
+                if not prices:
+                    res_body = "<p>No data found.</p>"
+                else:
+                    res_body = f"<p>Max: {max(prices)}</p><p>Min: {min(prices)}</p><p>Avg: {sum(prices)/len(prices):.2f}</p>"
             except Exception as e:
-                print(f"Database error: {e}")
-                prices = []
-            
-            if not prices:
-                response_text = "No data found for this period."
-            else:
-                avg_p = sum(prices) / len(prices)
-                min_p = min(prices)
-                max_p = max(prices)
-                response_text = f"""
-                <h3>Results for DOT:</h3>
-                <p>Max Price: {max_p}</p>
-                <p>Min Price: {min_p}</p>
-                <p>Average Price: {avg_p:.2f}</p>
-                <a href="/">Back</a>
-                """
+                res_body = f"<p>Error: {e}</p>"
 
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(response_text.encode())
+            response = f"<html><body><h3>Results:</h3>{res_body}<br><a href='/'>Back</a></body></html>"
+            self.wfile.write(response.encode("utf-8"))
 
     def log_message(self, format, *args):
         return
 
-def run_scraper():
-    while True:
-        fetch_and_store_dot_price()
-        time.sleep(60)
-
-class ReusableTCPServer(socketserver.TCPServer):
-    allow_reuse_address = True
-
-
 def main():
-    print(f"Service started on port {PORT}")
-
-    scraper_thread = threading.Thread(target=run_scraper, daemon=True)
-    scraper_thread.start()
-    
-    with ReusableTCPServer(("", PORT), CryptoHandler) as httpd:
+    print(f"Function node starting on port {PORT}")
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", PORT), CryptoHandler) as httpd:
         httpd.serve_forever()
 
 if __name__ == "__main__":
