@@ -10,4 +10,5 @@ test-job:
     - export INFLUX_TOKEN="test-token"
     - export INFLUX_ORG="test-org"
     - export INFLUX_BUCKET="test-bucket"
+    - export PYTHONPATH=$PYTHONPATH:.
     - pytest -v hw6/test_app.py
