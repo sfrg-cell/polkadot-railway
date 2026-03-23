@@ -62,14 +62,17 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                 |> range(start: {start_time})
                 |> filter(fn: (r) => r._measurement == "crypto_price" and r.coin == "DOT")
             '''
-            
-            results = query_api.query(org=ORG, query=flux_query)
-            
-            prices = []
-            for table in results:
-                for record in table.records:
-                    prices.append(record.get_value())
 
+            try:
+                results = query_api.query(org=ORG, query=flux_query)
+                prices = []
+                for table in results:
+                    for record in table.records:
+                        prices.append(record.get_value())
+            except Exception as e:
+                print(f"Database error: {e}")
+                prices = []
+            
             if not prices:
                 response_text = "No data found for this period."
             else:
