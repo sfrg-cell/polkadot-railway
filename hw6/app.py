@@ -14,7 +14,7 @@ from pathlib import Path
 dotenv_path = Path('/home/anna/i_havryliuk/.env')
 load_dotenv(dotenv_path=dotenv_path)
 
-PORT = 5336
+PORT = int(os.getenv("PORT", 5336))
 TOKEN = os.getenv("INFLUX_TOKEN")
 ORG = os.getenv("INFLUX_ORG")
 BUCKET = os.getenv("INFLUX_BUCKET")
