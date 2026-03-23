@@ -4,7 +4,7 @@ import urllib.parse
 import os
 from influxdb_client import InfluxDBClient
 from dotenv import load_dotenv
-from hw6.collector import fetch_and_store_dot_price
+from collector import fetch_and_store_dot_price
 
 load_dotenv()
 
