@@ -5,6 +5,7 @@ import os
 from influxdb_client import InfluxDBClient
 from dotenv import load_dotenv
 from collector import fetch_and_store_dot_price
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
 
 load_dotenv()
 
@@ -17,12 +18,21 @@ URL = os.getenv("INFLUX_URL")
 client = InfluxDBClient(url=URL, token=TOKEN, org=ORG)
 query_api = client.query_api()
 
+VIEW_COUNT = Counter('index_page_views_total', 'Total number of views on the index page')
+
 class CryptoHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed_path.query)
 
-        if parsed_path.path == "/":
+        if parsed_path.path == "/metrics":
+            self.send_response(200)
+            self.send_header("Content-type", CONTENT_TYPE_LATEST)
+            self.end_headers()
+            self.wfile.write(generate_latest())
+            return
+
+        elif parsed_path.path == "/":
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
@@ -39,6 +49,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
 
         elif parsed_path.path == "/calculate":
+            VIEW_COUNT.inc()
             fetch_and_store_dot_price()
             hours_list = params.get("hours_ago")
             hours = hours_list[0] if hours_list else "1"

@@ -2,3 +2,4 @@ pytest
 requests
 influxdb-client
 python-dotenv
+prometheus_client
