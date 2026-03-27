@@ -16,46 +16,27 @@ test-job:
 deploy-job:
 
   stage: deploy
-
   image: python:3.10
 
-
   before_script:
-
     - apt update
-
     - apt install -y openssh-client rsync
-
     - mkdir -p ~/.ssh
-
     - cp "$SSH_KEY" ~/.ssh/id_ed25519
-
     - chmod 600 ~/.ssh/id_ed25519
-
     - chmod 700 ~/.ssh
 
   script:
-
     - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "echo SSH_OK"
-
-
     - rsync -av -e "ssh -i ~/.ssh/id_ed25519 -p $SERVER_PORT -o StrictHostKeyChecking=no" ./ $SERVER_USER@$SERVER_IP:~/app/
-  
-       - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
-
+    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
         pkill -f app.py || true &&
-
         cd ~/app &&
-
         pip3 install -r requirements.txt &&
-
         nohup python3 app.py > app.log 2>&1 &
-
       "
 
-
   only:
-
     - main 
 
 
