@@ -9,7 +9,7 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
 
 load_dotenv()
 
-PORT = int(os.getenv("PORT", 5336))
+PORT = int(os.getenv("PORT", 8080))
 TOKEN = os.getenv("INFLUX_TOKEN")
 ORG = os.getenv("INFLUX_ORG")
 BUCKET = os.getenv("INFLUX_BUCKET")
@@ -80,7 +80,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
 def main():
     print(f"Function node starting on port {PORT}")
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), CryptoHandler) as httpd:
+    with socketserver.TCPServer(("0.0.0.0", PORT), CryptoHandler) as httpd:
         httpd.serve_forever()
 
 if __name__ == "__main__":
